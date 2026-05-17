@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>sain</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500&family=Noto+Sans+JP:wght@500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --crimson: #c0392b;
+      --fg: #c8c8c8;
+      --fg-dim: #777;
+      --border: #3a3a3a;
+    }
+
+    body {
+      background: #111;
+      color: var(--fg);
+      font-family: 'Inter', 'Noto Sans JP', 'Hiragino Sans', sans-serif;
+      font-weight: 500;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 20px 56px;
+    }
+
+    /* -------- ヘッダー -------- */
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      font-family: 'Inter', sans-serif;
+      font-size: clamp(28px, 7vw, 40px);
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: clamp(11px, 2.5vw, 13px);
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      color: var(--fg-dim);
+    }
+
+    /* -------- 色紙コンテナ -------- */
+    .shikishi-wrap {
+      position: relative;
+      width: min(380px, calc(100vw - 40px));
+      aspect-ratio: 242 / 273;
+      margin-bottom: 20px;
+      filter: drop-shadow(0 20px 48px rgba(0,0,0,0.8)) drop-shadow(0 2px 8px rgba(0,0,0,0.5));
+    }
+
+    .shikishi-wrap canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      border-radius: 1px;
+    }
+
+    #drawCanvas {
+      cursor: crosshair;
+      touch-action: none;
+    }
+
+    /* -------- ツールバー -------- */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 22px;
+    }
+
+    .tool-group {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .tool-label {
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      color: var(--fg-dim);
+      min-width: 18px;
+    }
+
+    .color-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: transform 0.15s ease, border-color 0.15s;
+      padding: 0;
+      outline: none;
+    }
+    .color-btn.active,
+    .color-btn:hover { border-color: #fff; transform: scale(1.18); }
+
+    .size-btn {
+      width: 36px;
+      height: 32px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--fg-dim);
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 500;
+      font-family: 'Noto Sans JP', sans-serif;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+      padding: 0;
+    }
+    .size-btn.active { border-color: #fff; color: #fff; background: rgba(255,255,255,0.06); }
+    .size-btn:hover  { border-color: #888; color: #ccc; }
+
+    .action-btn {
+      padding: 6px 14px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--fg-dim);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      font-family: 'Noto Sans JP', sans-serif;
+      border-radius: 6px;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .action-btn:hover { border-color: #888; color: #ccc; }
+
+    .divider {
+      width: 1px;
+      height: 24px;
+      background: #2e2e2e;
+    }
+
+    /* -------- ペンタイプ -------- */
+    .pen-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--fg-dim);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      font-family: 'Noto Sans JP', sans-serif;
+      border-radius: 6px;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+      white-space: nowrap;
+    }
+    .pen-btn.active { border-color: #fff; color: #fff; background: rgba(255,255,255,0.06); }
+    .pen-btn:hover:not(.active) { border-color: #888; color: #ccc; }
+
+    .pen-preview {
+      width: 28px;
+      height: 14px;
+      flex-shrink: 0;
+    }
+
+    /* -------- 送りつけるボタン -------- */
+    .share-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .share-btn {
+      padding: 14px 44px;
+      background: var(--crimson);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: clamp(13px, 3vw, 15px);
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(192,57,43,0.4);
+      transition: transform 0.15s ease, box-shadow 0.15s, background 0.15s;
+    }
+    .share-btn:hover {
+      background: #d44235;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(192,57,43,0.55);
+    }
+    .share-btn:active { transform: translateY(0); }
+
+    .certificate {
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      color: #444;
+    }
+
+    .share-note {
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      color: #555;
+    }
+
+    /* -------- トースト -------- */
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(72px);
+      background: rgba(20,20,20,0.94);
+      border: 1px solid #3a3a3a;
+      color: #ccc;
+      padding: 12px 28px;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.15em;
+      border-radius: 8px;
+      transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.38s;
+      opacity: 0;
+      pointer-events: none;
+      backdrop-filter: blur(16px);
+      white-space: nowrap;
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* -------- 背景切替トグル -------- */
+    .bg-toggle {
+      display: flex;
+      background: #1e1e1e;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 3px;
+      gap: 2px;
+      margin-bottom: 20px;
+    }
+
+    .bg-toggle-btn {
+      padding: 7px 18px;
+      border: none;
+      background: transparent;
+      color: var(--fg-dim);
+      cursor: pointer;
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      border-radius: 5px;
+      transition: background 0.15s, color 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .bg-toggle-btn.active {
+      background: #2e2e2e;
+      color: #fff;
+    }
+
+    .bg-toggle-btn:hover:not(.active) {
+      color: #aaa;
+    }
+
+    .bg-icon {
+      width: 16px;
+      height: 16px;
+      border-radius: 3px;
+      border: 1px solid #555;
+      flex-shrink: 0;
+    }
+
+    .bg-icon.white { background: #fff; }
+    .bg-icon.transparent {
+      background: repeating-conic-gradient(#555 0% 25%, #333 0% 50%) 0 0 / 8px 8px;
+    }
+
+    @media (max-width: 400px) {
+      body { padding: 18px 12px 44px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>sain</h1>
+  <p class="subtitle">謹んでお送りいたします</p>
+</header>
+
+<!-- 色紙 -->
+<div class="shikishi-wrap" id="shikishiWrap">
+  <canvas id="bgCanvas"></canvas>
+  <canvas id="drawCanvas"></canvas>
+</div>
+
+<!-- ツールバー -->
+<div class="toolbar">
+  <div class="tool-group">
+    <span class="tool-label">ペン</span>
+    <button class="pen-btn active" data-pen="brush">
+      <svg class="pen-preview" viewBox="0 0 28 14" fill="none">
+        <path d="M2 12 Q8 2 14 7 Q20 12 26 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      ブラシ
+    </button>
+    <button class="pen-btn" data-pen="mackie">
+      <svg class="pen-preview" viewBox="0 0 28 14" fill="none">
+        <path d="M2 10 Q14 4 26 8" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
+      </svg>
+      マッキー
+    </button>
+    <button class="pen-btn" data-pen="name">
+      <svg class="pen-preview" viewBox="0 0 28 14" fill="none">
+        <path d="M2 10 Q14 4 26 8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+      ネームペン
+    </button>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="tool-group">
+    <span class="tool-label">色</span>
+    <button class="color-btn active" data-color="#1a1a2e" style="background:#1a1a2e" title="墨"></button>
+    <button class="color-btn" data-color="#b8a060" style="background:#b8a060" title="金"></button>
+    <button class="color-btn" data-color="#8b0000" style="background:#8b0000" title="朱"></button>
+    <button class="color-btn" data-color="#1e3a5f" style="background:#1e3a5f" title="群青"></button>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="tool-group">
+    <span class="tool-label">太さ</span>
+    <button class="size-btn" data-size="1.5">細</button>
+    <button class="size-btn active" data-size="3">中</button>
+    <button class="size-btn" data-size="6">太</button>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="tool-group">
+    <button class="action-btn" id="undoBtn">↩ 戻す</button>
+    <button class="action-btn" id="clearBtn">全消去</button>
+  </div>
+</div>
+
+<!-- 背景切替 -->
+<div class="bg-toggle">
+  <button class="bg-toggle-btn active" data-bg="white">
+    <span class="bg-icon white"></span>白背景
+  </button>
+  <button class="bg-toggle-btn" data-bg="transparent">
+    <span class="bg-icon transparent"></span>背景透過
+  </button>
+</div>
+
+<!-- 送りつける -->
+<div class="share-area">
+  <button class="share-btn" id="shareBtn">この色紙を送りつける</button>
+  <p class="certificate" id="certNum">証明書番号：読み込み中…</p>
+  <p class="share-note">相手への最大限の敬意を込めて</p>
+</div>
+
+<div class="toast" id="toast">送りつけました</div>
+
+<script>
+(() => {
+  const DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+  const wrap = document.getElementById('shikishiWrap');
+  const bgCanvas = document.getElementById('bgCanvas');
+  const drawCanvas = document.getElementById('drawCanvas');
+  const bgCtx = bgCanvas.getContext('2d');
+  const drawCtx = drawCanvas.getContext('2d');
+
+  // -------- キャンバス初期化 --------
+  function initCanvases() {
+    const r = wrap.getBoundingClientRect();
+    const W = Math.round(r.width);
+    const H = Math.round(r.height);
+
+    for (const c of [bgCanvas, drawCanvas]) {
+      c.width = W * DPR;
+      c.height = H * DPR;
+      c.style.width = W + 'px';
+      c.style.height = H + 'px';
+    }
+
+    drawShikishiBackground(bgCtx, W * DPR, H * DPR);
+  }
+
+  // -------- 色紙背景（真っ白） --------
+  function drawShikishiBackground(ctx, W, H) {
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // -------- 描画状態 --------
+  let isDrawing = false;
+  let currentColor = '#1a1a2e';
+  let currentSize = 3;
+  let currentPen = 'brush';
+  const undoStack = [];
+  const MAX_UNDO = 20;
+  let points = [];
+
+  function getPos(e) {
+    const rect = drawCanvas.getBoundingClientRect();
+    const sx = drawCanvas.width  / rect.width;
+    const sy = drawCanvas.height / rect.height;
+
+    if (e.touches && e.touches.length > 0) {
+      const t = e.touches[0];
+      return {
+        x: (t.clientX - rect.left) * sx,
+        y: (t.clientY - rect.top)  * sy,
+        force: t.force > 0 ? t.force : 1
+      };
+    }
+    return {
+      x: (e.clientX - rect.left) * sx,
+      y: (e.clientY - rect.top)  * sy,
+      force: 1
+    };
+  }
+
+  function saveState() {
+    const snap = drawCtx.getImageData(0, 0, drawCanvas.width, drawCanvas.height);
+    undoStack.push(snap);
+    if (undoStack.length > MAX_UNDO) undoStack.shift();
+  }
+
+  function penLineWidth(pos, prev) {
+    if (currentPen === 'mackie') {
+      return currentSize * DPR * 4.2;
+    }
+    if (currentPen === 'name') {
+      return currentSize * DPR * 0.55;
+    }
+    // brush: speed + pressure variation
+    const dx = pos.x - prev.x;
+    const dy = pos.y - prev.y;
+    const speed = Math.sqrt(dx * dx + dy * dy);
+    const speedFactor = Math.max(0.45, Math.min(1.6, 9 / (speed + 2)));
+    const force = pos.force || 1;
+    return currentSize * DPR * speedFactor * (0.65 + force * 0.7);
+  }
+
+  function startDrawing(e) {
+    e.preventDefault();
+    isDrawing = true;
+    saveState();
+
+    const pos = getPos(e);
+    points = [pos];
+
+    const dotR = currentPen === 'mackie' ? currentSize * DPR * 2.1
+               : currentPen === 'name'   ? currentSize * DPR * 0.28
+               : currentSize * DPR * 0.5;
+
+    drawCtx.save();
+    drawCtx.globalAlpha = currentPen === 'mackie' ? 0.88 : 1.0;
+    drawCtx.beginPath();
+    drawCtx.arc(pos.x, pos.y, dotR, 0, Math.PI * 2);
+    drawCtx.fillStyle = currentColor;
+    drawCtx.fill();
+    drawCtx.restore();
+  }
+
+  function draw(e) {
+    if (!isDrawing) return;
+    e.preventDefault();
+
+    const pos = getPos(e);
+    points.push(pos);
+    if (points.length < 2) return;
+
+    const prev = points[points.length - 2];
+    const lw = penLineWidth(pos, prev);
+
+    drawCtx.save();
+    drawCtx.globalAlpha = currentPen === 'mackie' ? 0.88 : 1.0;
+    drawCtx.beginPath();
+    drawCtx.strokeStyle = currentColor;
+    drawCtx.lineWidth = lw;
+    drawCtx.lineCap = currentPen === 'mackie' ? 'square' : 'round';
+    drawCtx.lineJoin = 'round';
+
+    if (points.length === 2) {
+      drawCtx.moveTo(prev.x, prev.y);
+      drawCtx.lineTo(pos.x, pos.y);
+    } else {
+      const pp = points[points.length - 3];
+      const mx1 = (pp.x + prev.x) / 2;
+      const my1 = (pp.y + prev.y) / 2;
+      const mx2 = (prev.x + pos.x) / 2;
+      const my2 = (prev.y + pos.y) / 2;
+      drawCtx.moveTo(mx1, my1);
+      drawCtx.quadraticCurveTo(prev.x, prev.y, mx2, my2);
+    }
+    drawCtx.stroke();
+    drawCtx.restore();
+  }
+
+  function stopDrawing(e) {
+    if (!isDrawing) return;
+    e.preventDefault();
+    isDrawing = false;
+    points = [];
+  }
+
+  drawCanvas.addEventListener('mousedown', startDrawing);
+  drawCanvas.addEventListener('mousemove', draw);
+  drawCanvas.addEventListener('mouseup', stopDrawing);
+  drawCanvas.addEventListener('mouseleave', stopDrawing);
+  drawCanvas.addEventListener('touchstart', startDrawing, { passive: false });
+  drawCanvas.addEventListener('touchmove', draw, { passive: false });
+  drawCanvas.addEventListener('touchend', stopDrawing, { passive: false });
+  drawCanvas.addEventListener('touchcancel', stopDrawing, { passive: false });
+
+  // -------- ツールコントロール --------
+  document.querySelectorAll('.pen-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.pen-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentPen = btn.dataset.pen;
+    });
+  });
+
+  document.querySelectorAll('.color-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentColor = btn.dataset.color;
+    });
+  });
+
+  document.querySelectorAll('.size-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentSize = parseFloat(btn.dataset.size);
+    });
+  });
+
+  document.getElementById('undoBtn').addEventListener('click', () => {
+    if (undoStack.length === 0) return;
+    drawCtx.putImageData(undoStack.pop(), 0, 0);
+  });
+
+  document.getElementById('clearBtn').addEventListener('click', () => {
+    drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+    undoStack.length = 0;
+  });
+
+  // -------- 共有・エクスポート --------
+  async function exportAndShare() {
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const ts = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+    const filename = `shikishi_${ts}.png`;
+
+    // 合成（背景透過の場合はbgCanvasを描かない）
+    const exportCanvas = document.createElement('canvas');
+    exportCanvas.width  = bgCanvas.width;
+    exportCanvas.height = bgCanvas.height;
+    const expCtx = exportCanvas.getContext('2d');
+    if (useWhiteBg) expCtx.drawImage(bgCanvas, 0, 0);
+    expCtx.drawImage(drawCanvas, 0, 0);
+
+    exportCanvas.toBlob(async blob => {
+      if (!blob) return;
+      const file = new File([blob], filename, { type: 'image/png' });
+
+      // Web Share API（AirDrop対応）
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: '直筆サイン色紙', text: '謹んでお送りいたします' });
+          showToast('送りつけました');
+          return;
+        } catch (err) {
+          if (err.name === 'AbortError') return;
+        }
+      }
+
+      // フォールバック：ダウンロード
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      showToast('保存しました');
+    }, 'image/png');
+  }
+
+  document.getElementById('shareBtn').addEventListener('click', exportAndShare);
+
+  function showToast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2800);
+  }
+
+  // -------- 背景切替 --------
+  let useWhiteBg = true;
+
+  document.querySelectorAll('.bg-toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.bg-toggle-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      useWhiteBg = btn.dataset.bg === 'white';
+    });
+  });
+
+  // -------- 証明書番号（シュール演出） --------
+  const certNum = String(Math.floor(Math.random() * 99999)).padStart(5, '0');
+  document.getElementById('certNum').textContent = `証明書番号：${certNum}`;
+
+  // -------- 初期化 --------
+  initCanvases();
+
+  // リサイズ対応
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      // 描画内容を退避してリサイズ
+      const tmp = document.createElement('canvas');
+      tmp.width = drawCanvas.width;
+      tmp.height = drawCanvas.height;
+      tmp.getContext('2d').drawImage(drawCanvas, 0, 0);
+
+      initCanvases();
+
+      // スケールして描画内容を復元
+      drawCtx.drawImage(tmp, 0, 0, drawCanvas.width, drawCanvas.height);
+    }, 200);
+  });
+})();
+</script>
+</body>
+</html>
